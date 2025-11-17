@@ -8,14 +8,13 @@ export default function handler(req, res) {
   const { username, password } = req.body;
   if(!username || !password) return res.status(400).json({ message:'Usuario y contraseña requeridos' });
 
-  const filePath = path.join(process.cwd(),'users.json');
+  const filePath = path.join(process.cwd(), 'users.json');
   const users = JSON.parse(fs.readFileSync(filePath,'utf8'));
 
-  const user = users.find(u=>u.username===username);
+  const user = users.find(u => u.username === username);
   if(user && bcrypt.compareSync(password, user.passwordHash)){
     res.status(200).json({ ok:true, role: username==='admin'?'admin':'user' });
   } else {
     res.status(401).json({ ok:false, message:'Usuario o contraseña incorrectos' });
   }
 }
-
