@@ -1,4 +1,7 @@
 {
   "name": "gestoria-gonzalez",
   "version": "1.0.0",
-  "dependencies": {}
+  "dependencies": {
+    "bcryptjs": "^2.4.3"
+  }
+}
