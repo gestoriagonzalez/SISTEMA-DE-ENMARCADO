@@ -56,7 +56,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  const basePath = "/pdf/"; // ✅ Ruta corregida para Vercel
+  const basePath = "/pdf/"; // ✅ Ruta correcta para Vercel
   const marcoFile = "MARCO_ACTA.pdf";
 
   const estadosValidos = [
@@ -91,46 +91,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function mergePDF(baseBytes) {
-    try {
-      const { PDFDocument } = PDFLib;
-      const marcoBytes = await fetch(basePath + marcoFile).then(r => r.arrayBuffer());
-      const basePdf = await PDFDocument.load(baseBytes);
-      const marcoPdf = await PDFDocument.load(marcoBytes);
-      const result = await PDFDocument.create();
+    const { PDFDocument } = PDFLib;
+    const marcoBytes = await fetch(basePath + marcoFile).then(r => r.arrayBuffer());
+    const basePdf = await PDFDocument.load(baseBytes);
+    const marcoPdf = await PDFDocument.load(marcoBytes);
+    const result = await PDFDocument.create();
 
-      const [basePage] = await result.copyPages(basePdf, [0]);
-      const [marcoPage] = await result.copyPages(marcoPdf, [0]);
-      const { width, height } = basePage.getSize();
-      const page = result.addPage([width, height]);
-      page.drawPage(await page.doc.embedPage(marcoPage), { x:0, y:0, width, height });
-      page.drawPage(await page.doc.embedPage(basePage), { x:0, y:0, width, height });
+    const [basePage] = await result.copyPages(basePdf, [0]);
+    const [marcoPage] = await result.copyPages(marcoPdf, [0]);
+    const { width, height } = basePage.getSize();
+    const page = result.addPage([width, height]);
+    page.drawPage(await page.doc.embedPage(marcoPage), { x:0, y:0, width, height });
+    page.drawPage(await page.doc.embedPage(basePage), { x:0, y:0, width, height });
 
-      return result;
-    } catch(e) {
-      console.error("Error mergePDF:", e);
-      alert("Error al procesar PDF: " + e.message);
-      return null;
-    }
+    return result;
   }
 
   async function mergePDFWithReverso(baseBytes, estado) {
-    try {
-      const result = await mergePDF(baseBytes);
-      if (!result) throw new Error("No se pudo generar el PDF base.");
-      const revBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
-      const revPdf = await PDFLib.PDFDocument.load(revBytes);
-      const [revPage] = await result.copyPages(revPdf, [0]);
-      result.addPage(revPage);
-      return result;
-    } catch(e) {
-      console.error("Error mergePDFWithReverso:", e);
-      alert("Error al agregar reverso: " + e.message);
-      return null;
-    }
+    const result = await mergePDF(baseBytes);
+    const revBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
+    const revPdf = await PDFLib.PDFDocument.load(revBytes);
+    const [revPage] = await result.copyPages(revPdf, [0]);
+    result.addPage(revPage);
+    return result;
   }
 
   async function download(pdf, name) {
-    if (!pdf) return;
     const bytes = await pdf.save();
     const url = URL.createObjectURL(new Blob([bytes], { type:"application/pdf" }));
     const a = document.createElement("a");
@@ -154,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const bytes = await file.arrayBuffer();
         const pdf = await mergePDF(bytes);
-        if (pdf) await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf");
+        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf");
         count++;
       } catch(err) {
         console.error(err);
@@ -184,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const bytes = await file.arrayBuffer();
         const pdf = await mergePDFWithReverso(bytes, estado);
-        if (pdf) await download(pdf, file.name.replace(/\.pdf$/i, "") + " - CON REVERSO.pdf");
+        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - CON REVERSO.pdf");
         count++;
       } catch(err) {
         console.error(err);
@@ -200,3 +186,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
