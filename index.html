@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GESTORÍA GONZÁLEZ</title>
-
 <style>
-  /* Modal de login elegante */
+  /* Estilos del modal de login */
   #loginModal {
     position: fixed;
     top:0;
@@ -20,29 +19,44 @@
     z-index: 9999;
     font-family: Arial, sans-serif;
   }
+
   #loginBox {
-    background:#fff;
-    padding:40px 30px;
-    border-radius:12px;
-    width:380px;
+    background: #fff;
+    padding: 40px 30px;
+    border-radius: 12px;
+    width: 380px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    text-align:center;
+    text-align: center;
     animation: fadeIn 0.5s ease;
   }
-  #loginBox h2 { margin-bottom:20px; color:#333; }
-  #loginBox input { width:90%; padding:12px; margin:8px 0; border:1px solid #ccc; border-radius:8px; font-size:14px;}
-  #loginBox button { width:95%; padding:12px; background:#007BFF; border:none; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; margin-top:10px;}
+
+  #loginBox h2 { margin-bottom: 20px; color: #333; }
+  #loginBox input { width: 90%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+  #loginBox button { width: 95%; padding: 12px; background:#007BFF; border:none; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; margin-top:10px;}
   #loginBox button:hover { background:#0056b3; }
   #errorMsg { margin-top:12px; color:red; font-size:14px; }
-  #addUserSection { margin-top:20px; border-top:1px solid #ccc; padding-top:15px; }
-  #addUserSection input { margin-bottom:5px; }
-  #successMsg { color:green; font-size:14px; margin-top:8px; }
   @keyframes fadeIn { from {opacity:0; transform:translateY(-20px);} to {opacity:1; transform:translateY(0);} }
+
+  /* Panel de administración dentro de la página */
+  #adminPanel {
+    display: none; /* oculto por defecto */
+    border: 2px solid #007BFF;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 10px;
+    background-color: #f1f8ff;
+  }
+
+  #adminPanel input { margin: 5px 0; padding: 8px; width: 90%; border-radius: 6px; border: 1px solid #ccc; }
+  #adminPanel button { margin-top: 8px; padding: 10px 15px; border:none; border-radius:6px; background:#007BFF; color:#fff; cursor:pointer; }
+  #adminPanel button:hover { background:#0056b3; }
+  #successMsg { color:green; font-size:14px; margin-top:8px; }
+  #userList { margin-top:10px; font-size:14px; }
 </style>
 </head>
 <body>
 
-<!-- Contenedor que ocultará todo tu HTML original hasta login -->
+<!-- Contenedor de tu página funcional -->
 <div id="<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -232,16 +246,25 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 </html>
 ">
-  <!-- AQUI PEGA TODO TU HTML REAL DE LA PÁGINA -->
-  <!-- Por ejemplo: -->
+  <!-- PEGAR TODO TU HTML REAL AQUÍ -->
   <header>
     <h1>Gestoría González</h1>
-    <nav> <!-- tu menú --> </nav>
+    <nav> <!-- menú real --> </nav>
   </header>
   <section>
-    <p>Todo tu contenido funcional de la página va aquí.</p>
+    <p>Todo tu contenido funcional va aquí.</p>
   </section>
-  <footer> <!-- tu footer --> </footer>
+  <footer> <!-- footer real --> </footer>
+
+  <!-- Panel de administración (solo visible para admin) -->
+  <div id="adminPanel">
+    <h3>Gestión de Usuarios</h3>
+    <input type="text" id="newUser" placeholder="Nuevo usuario">
+    <input type="password" id="newPass" placeholder="Contraseña">
+    <button onclick="addUser()">Agregar Usuario</button>
+    <p id="successMsg"></p>
+    <div id="userList"></div>
+  </div>
 </div>
 
 <!-- Modal de login -->
@@ -252,20 +275,11 @@ document.addEventListener("DOMContentLoaded", () => {
     <input type="password" id="password" placeholder="Contraseña">
     <button onclick="checkLogin()">Entrar</button>
     <p id="errorMsg"></p>
-
-    <!-- Sección para agregar usuarios solo visible para admin -->
-    <div id="addUserSection">
-      <h3>Agregar Usuario</h3>
-      <input type="text" id="newUser" placeholder="Nuevo usuario">
-      <input type="password" id="newPass" placeholder="Contraseña">
-      <button onclick="addUser()">Agregar</button>
-      <p id="successMsg"></p>
-    </div>
   </div>
 </div>
 
 <script>
-  // Gestiona tus usuarios y contraseñas aquí
+  // Usuarios y contraseñas iniciales
   let users = {
     "admin": "1234",
     "usuario1": "pass1"
@@ -273,20 +287,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const modal = document.getElementById('loginModal');
   const mainContent = document.getElementById('mainContent');
-  const addUserSection = document.getElementById('addUserSection');
+  const adminPanel = document.getElementById('adminPanel');
   const errorMsg = document.getElementById('errorMsg');
   const successMsg = document.getElementById('successMsg');
+  const userListDiv = document.getElementById('userList');
 
   mainContent.style.display = 'none'; // Oculta contenido hasta login
-  addUserSection.style.display = 'none'; // Oculta sección agregar usuarios
 
   function checkLogin() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
+
     if(users[username] && users[username] === password) {
       modal.style.display = 'none';
-      mainContent.style.display = 'block'; // Muestra toda tu página
-      if(username === "admin") addUserSection.style.display = 'block';
+      mainContent.style.display = 'block';
+      errorMsg.innerText = '';
+
+      // Si es admin, muestra el panel de gestión de usuarios
+      if(username === 'admin') {
+        adminPanel.style.display = 'block';
+        renderUserList();
+      }
     } else {
       errorMsg.innerText = "Usuario o contraseña incorrectos";
     }
@@ -295,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function addUser() {
     const newUser = document.getElementById('newUser').value.trim();
     const newPass = document.getElementById('newPass').value;
+
     if(newUser && newPass) {
       if(users[newUser]) {
         successMsg.style.color = 'red';
@@ -305,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
         successMsg.innerText = "Usuario agregado correctamente";
         document.getElementById('newUser').value = '';
         document.getElementById('newPass').value = '';
+        renderUserList();
       }
     } else {
       successMsg.style.color = 'red';
@@ -312,10 +335,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function renderUserList() {
+    let html = "<strong>Usuarios existentes:</strong><ul>";
+    for(let u in users) {
+      html += `<li>${u}</li>`;
+    }
+    html += "</ul>";
+    userListDiv.innerHTML = html;
+  }
+
   // Enter para login
-  document.getElementById('password').addEventListener('keyup', function(e){ if(e.key==='Enter') checkLogin(); });
+  document.getElementById('password').addEventListener('keyup', function(e){
+    if(e.key === 'Enter') checkLogin();
+  });
+
   // Enter para agregar usuario
-  document.getElementById('newPass').addEventListener('keyup', function(e){ if(e.key==='Enter') addUser(); });
+  document.getElementById('newPass').addEventListener('keyup', function(e){
+    if(e.key === 'Enter') addUser();
+  });
+
 </script>
 
 </body>
