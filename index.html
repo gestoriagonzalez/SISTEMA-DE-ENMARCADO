@@ -3,25 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GESTORÍA GONZÁLEZ</title>
+<title>Gestoría González</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; }
-#loginModal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75); display:flex; justify-content:center; align-items:center; z-index:9999; }
-#loginBox { background:#fff; padding:40px 30px; border-radius:12px; width:380px; text-align:center; }
-#loginBox input { width:90%; padding:12px; margin:8px 0; border:1px solid #ccc; border-radius:8px; font-size:14px;}
-#loginBox button { width:95%; padding:12px; background:#007BFF; border:none; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; margin-top:10px;}
-#loginBox button:hover { background:#0056b3; }
-#errorMsg { color:red; margin-top:10px; }
-
-#adminPanel { display:none; border:2px solid #007BFF; padding:20px; margin:20px; border-radius:10px; background:#f1f8ff; }
-#adminPanel input { display:block; width:90%; margin:5px 0; padding:8px; border:1px solid #ccc; border-radius:6px;}
-#adminPanel button { padding:10px 15px; margin-top:10px; background:#007BFF; color:#fff; border:none; border-radius:6px; cursor:pointer;}
-#adminPanel button:hover { background:#0056b3; }
-#successMsg { color:green; margin-top:8px; }
-#userList { margin-top:10px; font-size:14px; }
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
+  #loginModal { display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
+  #loginBox { background:#fff; padding:20px; border-radius:8px; width:300px; box-shadow:0 0 10px rgba(0,0,0,0.3); }
+  input { width:100%; padding:8px; margin:8px 0; }
+  button { padding:8px 12px; margin-top:8px; cursor:pointer; }
+  #panelAdmin { margin:20px 0; padding:10px; border:1px solid #ccc; background:#fff; border-radius:6px; }
+  #mainContent { padding:20px; }
 </style>
 </head>
 <body>
+
+<div id="loginModal">
+  <div id="loginBox">
+    <h3>Login</h3>
+    <input type="text" id="username" placeholder="Usuario">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button onclick="login()">Ingresar</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+</div>
 
 <div id="<!DOCTYPE html>
 <html lang="es">
@@ -211,86 +214,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-">
-  <!-- Contenido funcional de tu página -->
-  <header>
-    <h1>Gestoría González</h1>
-  </header>
-  <section>
-    <p>Contenido de tu página aquí...</p>
-  </section>
-  <footer>
-    <p>© 2025 Gestoría González</p>
-  </footer>
-
-  <!-- Panel de administración solo visible para admin -->
-  <div id="adminPanel">
-    <h3>CREAR USUARIOS</h3>
-    <input type="text" id="newUser" placeholder="Nombre de usuario">
+" style="display:none;">
+  <h1>Gestoría González</h1>
+  <div id="panelAdmin" style="display:none;">
+    <h3>Panel Admin - Crear Usuario</h3>
+    <input type="text" id="newUser" placeholder="Nuevo usuario">
     <input type="password" id="newPass" placeholder="Contraseña">
     <button onclick="addUser()">Agregar Usuario</button>
-    <p id="successMsg"></p>
-    <div id="userList"></div>
+    <p id="userMsg" style="color:green;"></p>
   </div>
-</div>
 
-<div id="loginModal">
-  <div id="loginBox">
-    <h2>Iniciar Sesión</h2>
-    <input type="text" id="username" placeholder="Usuario">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button onclick="checkLogin()">Entrar</button>
-    <p id="errorMsg"></p>
-  </div>
+  <!-- Tu contenido original aquí -->
+  <p>Contenido protegido...</p>
+  <p>Sección de enmarcado múltiple...</p>
 </div>
 
 <script>
-const modal = document.getElementById('loginModal');
-const mainContent = document.getElementById('mainContent');
-const adminPanel = document.getElementById('adminPanel');
-const errorMsg = document.getElementById('errorMsg');
-const successMsg = document.getElementById('successMsg');
-const userListDiv = document.getElementById('userList');
-
-mainContent.style.display = 'none';
-
-// Login
-async function checkLogin() {
-  const username = document.getElementById('username').value.trim();
+async function login() {
+  const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
+  const error = document.getElementById('loginError');
+  error.textContent = '';
+  
   try {
     const res = await fetch('/api/login', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ username, password })
     });
     const data = await res.json();
     if(data.ok){
-      modal.style.display = 'none';
-      mainContent.style.display = 'block';
-      errorMsg.innerText = '';
-      if(data.role === 'admin'){
-        adminPanel.style.display = 'block';
-        loadUsers();
-      }
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      if(data.role==='admin') document.getElementById('panelAdmin').style.display='block';
     } else {
-      errorMsg.innerText = data.message || 'Login fallido';
+      error.textContent = data.message;
     }
   } catch(err){
-    console.error(err);
-    errorMsg.innerText = 'Error de conexión';
+    error.textContent = 'Error de conexión';
   }
 }
 
-// Crear usuario
 async function addUser() {
-  const username = document.getElementById('newUser').value.trim();
+  const username = document.getElementById('newUser').value;
   const password = document.getElementById('newPass').value;
-  if(!username || !password){
-    successMsg.style.color='red';
-    successMsg.innerText='Complete ambos campos';
-    return;
-  }
+  const msg = document.getElementById('userMsg');
+  msg.style.color='green';
+  msg.textContent = '';
+
+  if(!username || !password){ msg.style.color='red'; msg.textContent='Completa todos los campos'; return; }
+
   try {
     const res = await fetch('/api/users', {
       method:'POST',
@@ -299,49 +272,22 @@ async function addUser() {
     });
     const data = await res.json();
     if(res.ok){
-      successMsg.style.color='green';
-      successMsg.innerText='Usuario agregado correctamente';
+      msg.textContent = data.message;
       document.getElementById('newUser').value='';
       document.getElementById('newPass').value='';
-      loadUsers();
     } else {
-      successMsg.style.color='red';
-      successMsg.innerText=data.message;
+      msg.style.color='red';
+      msg.textContent = data.message;
     }
   } catch(err){
-    console.error(err);
-    successMsg.style.color='red';
-    successMsg.innerText='Error al agregar usuario';
+    msg.style.color='red';
+    msg.textContent = 'Error de conexión';
   }
 }
-
-// Listar usuarios
-async function loadUsers() {
-  try{
-    const res = await fetch('/api/users');
-    const users = await res.json();
-    let html='<strong>Usuarios existentes:</strong><ul>';
-    users.forEach(u=>{ html+=`<li>${u.username}</li>`; });
-    html+='</ul>';
-    userListDiv.innerHTML = html;
-  } catch(err){
-    console.error(err);
-    userListDiv.innerHTML='<p>Error cargando usuarios</p>';
-  }
-}
-
-// Enter para login
-document.getElementById('password').addEventListener('keyup', e=>{ if(e.key==='Enter') checkLogin(); });
-// Enter para agregar usuario
-document.getElementById('newPass').addEventListener('keyup', e=>{ if(e.key==='Enter') addUser(); });
 </script>
 
 </body>
 </html>
-
-
-
-
 
 
 
