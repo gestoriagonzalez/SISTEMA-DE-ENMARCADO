@@ -1,9 +1,10 @@
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+
 // ------------------------- CONFIG -------------------------
-const basePath = "./pdf/"; // Carpeta donde están el marco y los reversos
+const basePath = "./pdf/"; 
 const marcoFile = "MARCO_ACTA.pdf";
 
-// Lista de estados soportados (como deben llamarse los reversos)
 const estadosValidos = [
   "AGUASCALIENTES", "BAJA CALIFORNIA", "BAJA CALIFORNIA SUR",
   "CAMPECHE", "CHIAPAS", "CHIHUAHUA", "CIUDAD DE MEXICO",
@@ -19,23 +20,18 @@ const estadosValidos = [
 function detectEstado(text) {
   const lines = text.toUpperCase().split(/\r?\n/);
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = 0; i < lines.length - 1; i++) {
     if (lines[i].includes("ENTIDAD DE REGISTRO")) {
-      const estadoLinea = lines[i + 1]?.trim();
-      if (!estadoLinea) return null;
-
-      const estadoDetectado = estadosValidos.find(est =>
-        estadoLinea.includes(est)
-      );
-      return estadoDetectado || null;
+      const estadoLinea = lines[i + 1].trim();
+      return estadosValidos.find(est => estadoLinea.includes(est)) || null;
     }
   }
   return null;
 }
 
 async function extractTextFirstPage(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
   const page = await pdf.getPage(1);
   const text = await page.getTextContent();
   return text.items.map(t => t.str).join("\n");
@@ -48,32 +44,32 @@ async function mergePDF(baseBytes) {
   const marcoBytes = await fetch(basePath + marcoFile).then(r => r.arrayBuffer());
   const basePdf = await PDFDocument.load(baseBytes);
   const marcoPdf = await PDFDocument.load(marcoBytes);
-  const resultPdf = await PDFDocument.create();
+  const result = await PDFDocument.create();
 
-  const [basePage] = await resultPdf.copyPages(basePdf, [0]);
-  const [marcoPage] = await resultPdf.copyPages(marcoPdf, [0]);
+  const [basePage] = await result.copyPages(basePdf, [0]);
+  const [marcoPage] = await result.copyPages(marcoPdf, [0]);
 
   const { width, height } = basePage.getSize();
-  const page = resultPdf.addPage([width, height]);
+  const page = result.addPage([width, height]);
 
-  page.drawPage(await page.doc.embedPage(marcoPage), { x: 0, y: 0, width, height });
-  page.drawPage(await page.doc.embedPage(basePage), { x: 0, y: 0, width, height });
+  page.drawPage(await page.doc.embedPage(marcoPage), { x:0, y:0, width, height });
+  page.drawPage(await page.doc.embedPage(basePage), { x:0, y:0, width, height });
 
-  return resultPdf;
+  return result;
 }
 
-async function mergePDFWithReverso(baseBytes, estado) {
-  const resultPdf = await mergePDF(baseBytes);
-  const reversoBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
-  const reversoPdf = await PDFLib.PDFDocument.load(reversoBytes);
-  const [rp] = await resultPdf.copyPages(reversoPdf, [0]);
-  resultPdf.addPage(rp);
-  return resultPdf;
+async function mergePDFWithReverso(bytes, estado) {
+  const result = await mergePDF(bytes);
+  const revBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
+  const revPdf = await PDFLib.PDFDocument.load(revBytes);
+  const [revPage] = await result.copyPages(revPdf, [0]);
+  result.addPage(revPage);
+  return result;
 }
 
-async function download(pdfDoc, name) {
-  const pdfBytes = await pdfDoc.save();
-  const url = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+async function download(pdf, name) {
+  const bytes = await pdf.save();
+  const url = URL.createObjectURL(new Blob([bytes], { type:"application/pdf" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = name;
@@ -85,60 +81,54 @@ async function download(pdfDoc, name) {
 document.getElementById("mergeBtn").addEventListener("click", async () => {
   const input = document.getElementById("baseFiles");
   const status = document.getElementById("status");
-  const btn = document.getElementById("mergeBtn");
 
   if (!input.files.length) return alert("Selecciona al menos un PDF.");
 
-  btn.disabled = true;
+  status.textContent = "Procesando documentos...";
   let count = 0;
 
   for (const file of input.files) {
-    status.textContent = `Procesando: ${file.name}`;
-
     const bytes = await file.arrayBuffer();
     const pdf = await mergePDF(bytes);
-    await download(pdf, file.name.replace(/\.pdf$/i, "") + " (1).pdf");
-
+    await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf");
     count++;
   }
 
-  status.textContent = `✅ ${count} PDFs enmarcados correctamente.`;
-  btn.disabled = false;
+  status.textContent = `✔ ${count} PDF(s) procesados correctamente.`;
 });
 
 // ------------------------- BOTÓN CON REVERSO -------------------------
 document.getElementById("mergeWithReversoBtn").addEventListener("click", async () => {
   const input = document.getElementById("baseFilesWithReverso");
   const status = document.getElementById("status");
-  const btn = document.getElementById("mergeWithReversoBtn");
 
   if (!input.files.length) return alert("Selecciona al menos un PDF.");
 
-  btn.disabled = true;
+  status.textContent = "Leyendo información del acta...";
   let count = 0;
 
   for (const file of input.files) {
-    status.textContent = `Leyendo: ${file.name}`;
-
     const text = await extractTextFirstPage(file);
     const estado = detectEstado(text);
 
     if (!estado) {
-      alert(`No se detectó el estado en:\n${file.name}`);
+      alert(`❌ Estado no detectado en: ${file.name}`);
       continue;
     }
 
     const bytes = await file.arrayBuffer();
     const pdf = await mergePDFWithReverso(bytes, estado);
-    await download(pdf, file.name.replace(/\.pdf$/i, "") + " (1).pdf");
-
+    await download(pdf, file.name.replace(/\.pdf$/i, "") + " - CON REVERSO.pdf");
     count++;
   }
 
-  status.textContent = `✅ ${count} PDFs con reverso procesados correctamente.`;
-  btn.disabled = false;
+  status.textContent = `✔ ${count} PDF(s) con reverso procesados.`;
 });
+
+}); // FIN DOMContentLoaded
 </script>
+
+
 
 
 
