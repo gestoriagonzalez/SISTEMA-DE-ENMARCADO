@@ -1,102 +1,79 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GESTORÍA GONZÁLEZ - ENMARCADO MÚLTIPLE</title>
-
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-
-<style>
-  body { font-family: Arial, sans-serif; background:#f6f8fa; padding:24px; }
-  .card { background:#fff; border-radius:12px; padding:32px; max-width:800px; margin:auto; box-shadow:0 8px 25px rgba(0,0,0,0.12); text-align:center; }
-  h2 { color:#1a237e; margin-bottom:20px; }
-  p { line-height:1.6; color:#333; }
-  label { display:block; margin:24px 0 8px; font-weight:bold; font-size:17px; color:#222; }
-  input { padding:14px; font-size:16px; border-radius:8px; border:1px solid #ccc; width:100%; box-sizing:border-box; }
-  button { background:#007bff; color:white; border:none; padding:16px 32px; font-size:18px; font-weight:bold; border-radius:10px; cursor:pointer; margin-top:30px; }
-  button:hover:not(:disabled) { background:#0056b3; }
-  button:disabled { background:#999; cursor:not-allowed; }
-  #status { margin-top:25px; font-weight:bold; font-size:19px; min-height:30px; }
-  #progress { margin-top:10px; color:#555; font-size:15px; }
-</style>
-</head>
-<body>
-
-<div class="card">
-  <h2>GESTORÍA GONZÁLEZ</h2>
-  <h3>Sistema de Enmarcado Automático Múltiple</h3>
-  <p>Selecciona <strong>todas las actas que quieras enmarcar</strong> (puedes seleccionar 1, 10 o 100 a la vez).</p>
-  <p>El marco y el reverso se aplican automáticamente según el estado detectado.</p>
-
-  <label>Actas a enmarcar (múltiples archivos, sin reverso):</label>
-  <input id="baseFiles" type="file" accept="application/pdf" multiple>
-  <button id="mergeBtn">GENERAR TODOS LOS PDFs ENMARCADOS</button>
-
-  <hr style="margin:30px 0;">
-
-  <label>Actas a enmarcar y agregar reverso automáticamente:</label>
-  <input id="baseFilesWithReverso" type="file" accept="application/pdf" multiple>
-  <button id="mergeWithReversoBtn">GENERAR PDF CON REVERSO AUTOMÁTICO</button>
-
-  <div id="status">Listo para procesar</div>
-  <div id="progress"></div>
-</div>
-
 <script>
-// Lista oficial de estados
-const stateNames = [
-  "AGUASCALIENTES","BAJA CALIFORNIA","BAJA CALIFORNIA SUR","CAMPECHE",
-  "CHIAPAS","CHIHUAHUA","COAHUILA","COLIMA","CIUDAD DE MEXICO","CDMX",
-  "DURANGO","GUANAJUATO","GUERRERO","HIDALGO","JALISCO",
-  "MEXICO","MICHOACAN","MORELOS","NAYARIT","NUEVO LEON",
-  "OAXACA","PUEBLA","QUERETARO","QUINTANA ROO","SAN LUIS POTOSI",
-  "SINALOA","SONORA","TABASCO","TAMAULIPAS","TLAXCALA",
-  "VERACRUZ","YUCATAN","ZACATECAS"
+// ------------------------- CONFIG -------------------------
+const basePath = "./pdf/"; // Carpeta donde están el marco y los reversos
+const marcoFile = "MARCO_ACTA.pdf";
+
+// Lista de estados soportados (como deben llamarse los reversos)
+const estadosValidos = [
+  "AGUASCALIENTES", "BAJA CALIFORNIA", "BAJA CALIFORNIA SUR",
+  "CAMPECHE", "CHIAPAS", "CHIHUAHUA", "CIUDAD DE MEXICO",
+  "COAHUILA", "COLIMA", "DURANGO", "GUANAJUATO", "GUERRERO",
+  "HIDALGO", "JALISCO", "MEXICO", "MICHOACAN", "MORELOS",
+  "NAYARIT", "NUEVO LEON", "OAXACA", "PUEBLA", "QUERETARO",
+  "QUINTANA ROO", "SAN LUIS POTOSI", "SINALOA", "SONORA",
+  "TABASCO", "TAMAULIPAS", "TLAXCALA", "VERACRUZ",
+  "YUCATAN", "ZACATECAS"
 ];
 
-const basePath = "./pdf/";
+// ------------------------- DETECCIÓN ESTADO -------------------------
+function detectEstado(text) {
+  const lines = text.toUpperCase().split(/\r?\n/);
 
-// --------------------- FUNCIONES ---------------------
-async function embedMarco(baseBytes) {
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes("ENTIDAD DE REGISTRO")) {
+      const estadoLinea = lines[i + 1]?.trim();
+      if (!estadoLinea) return null;
+
+      const estadoDetectado = estadosValidos.find(est =>
+        estadoLinea.includes(est)
+      );
+      return estadoDetectado || null;
+    }
+  }
+  return null;
+}
+
+async function extractTextFirstPage(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const page = await pdf.getPage(1);
+  const text = await page.getTextContent();
+  return text.items.map(t => t.str).join("\n");
+}
+
+// ------------------------- FUNCIONES PDF -------------------------
+async function mergePDF(baseBytes) {
   const { PDFDocument } = PDFLib;
 
-  const marcoBytes = await fetch(basePath + encodeURIComponent("MARCO ACTA.pdf")).then(r => r.arrayBuffer());
+  const marcoBytes = await fetch(basePath + marcoFile).then(r => r.arrayBuffer());
+  const basePdf = await PDFDocument.load(baseBytes);
+  const marcoPdf = await PDFDocument.load(marcoBytes);
+  const resultPdf = await PDFDocument.create();
 
-  const basePDF = await PDFDocument.load(baseBytes);
-  const marcoPDF = await PDFDocument.load(marcoBytes);
-  const resultPDF = await PDFDocument.create();
+  const [basePage] = await resultPdf.copyPages(basePdf, [0]);
+  const [marcoPage] = await resultPdf.copyPages(marcoPdf, [0]);
 
-  const [marcoPage] = await resultPDF.copyPages(marcoPDF, [0]);
-  resultPDF.addPage(marcoPage);
+  const { width, height } = basePage.getSize();
+  const page = resultPdf.addPage([width, height]);
 
-  const [pageBase] = await resultPDF.copyPages(basePDF, [0]);
-  resultPDF.addPage(pageBase);
+  page.drawPage(await page.doc.embedPage(marcoPage), { x: 0, y: 0, width, height });
+  page.drawPage(await page.doc.embedPage(basePage), { x: 0, y: 0, width, height });
 
-  return resultPDF;
+  return resultPdf;
 }
 
-async function addReverso(resultPDF, estado){
-  const revPath = basePath + encodeURIComponent(estado + ".pdf");
-  try {
-    const revBytes = await fetch(revPath).then(r => {
-      if (!r.ok) throw new Error();
-      return r.arrayBuffer();
-    });
-    const { PDFDocument } = PDFLib;
-    const reversoPDF = await PDFDocument.load(revBytes);
-    const [revPage] = await resultPDF.copyPages(reversoPDF, [0]);
-    resultPDF.addPage(revPage);
-    return true;
-  } catch {
-    return false;
-  }
+async function mergePDFWithReverso(baseBytes, estado) {
+  const resultPdf = await mergePDF(baseBytes);
+  const reversoBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
+  const reversoPdf = await PDFLib.PDFDocument.load(reversoBytes);
+  const [rp] = await resultPdf.copyPages(reversoPdf, [0]);
+  resultPdf.addPage(rp);
+  return resultPdf;
 }
 
-async function downloadPDF(pdfDoc, name){
+async function download(pdfDoc, name) {
   const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type:"application/pdf" });
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = name;
@@ -104,73 +81,65 @@ async function downloadPDF(pdfDoc, name){
   URL.revokeObjectURL(url);
 }
 
-// ------------------ BOTÓN ENMARCADO SIMPLE ------------------
+// ------------------------- BOTÓN SIN REVERSO -------------------------
 document.getElementById("mergeBtn").addEventListener("click", async () => {
   const input = document.getElementById("baseFiles");
-  if(input.files.length === 0) return alert("Selecciona al menos 1 PDF.");
+  const status = document.getElementById("status");
+  const btn = document.getElementById("mergeBtn");
 
-  const files = Array.from(input.files);
-  document.getElementById("mergeBtn").disabled = true;
-  let processed = 0;
+  if (!input.files.length) return alert("Selecciona al menos un PDF.");
 
-  for(const file of files){
-    document.getElementById("status").textContent = `Procesando: ${file.name}`;
-    document.getElementById("progress").textContent = `${processed+1} de ${files.length}`;
+  btn.disabled = true;
+  let count = 0;
 
-    const resultPDF = await embedMarco(await file.arrayBuffer());
-    await downloadPDF(resultPDF, file.name.replace(/\.pdf$/i,"") + " - ENMARCADO.pdf");
+  for (const file of input.files) {
+    status.textContent = `Procesando: ${file.name}`;
 
-    processed++;
+    const bytes = await file.arrayBuffer();
+    const pdf = await mergePDF(bytes);
+    await download(pdf, file.name.replace(/\.pdf$/i, "") + " (1).pdf");
+
+    count++;
   }
 
-  document.getElementById("status").textContent = `✔ ¡Proceso terminado!`;
-  document.getElementById("progress").textContent = "";
-  document.getElementById("mergeBtn").disabled = false;
+  status.textContent = `✅ ${count} PDFs enmarcados correctamente.`;
+  btn.disabled = false;
 });
 
-// ------------------ BOTÓN ENMARCADO + REVERSO ------------------
+// ------------------------- BOTÓN CON REVERSO -------------------------
 document.getElementById("mergeWithReversoBtn").addEventListener("click", async () => {
   const input = document.getElementById("baseFilesWithReverso");
-  if(input.files.length === 0) return alert("Selecciona al menos 1 PDF.");
+  const status = document.getElementById("status");
+  const btn = document.getElementById("mergeWithReversoBtn");
 
-  const files = Array.from(input.files);
-  document.getElementById("mergeWithReversoBtn").disabled = true;
-  let processed = 0;
-  let missing = [];
+  if (!input.files.length) return alert("Selecciona al menos un PDF.");
 
-  for(const file of files){
-    const nameUpper = file.name.toUpperCase();
-    const estado = stateNames.find(st => nameUpper.includes(st));
+  btn.disabled = true;
+  let count = 0;
 
-    if(!estado){
-      missing.push(file.name + " (estado no detectado)");
+  for (const file of input.files) {
+    status.textContent = `Leyendo: ${file.name}`;
+
+    const text = await extractTextFirstPage(file);
+    const estado = detectEstado(text);
+
+    if (!estado) {
+      alert(`No se detectó el estado en:\n${file.name}`);
       continue;
     }
 
-    document.getElementById("status").textContent = `Procesando: ${file.name}`;
-    document.getElementById("progress").textContent = `${processed+1} de ${files.length}`;
+    const bytes = await file.arrayBuffer();
+    const pdf = await mergePDFWithReverso(bytes, estado);
+    await download(pdf, file.name.replace(/\.pdf$/i, "") + " (1).pdf");
 
-    const resultPDF = await embedMarco(await file.arrayBuffer());
-    const ok = await addReverso(resultPDF, estado);
-    if(!ok) missing.push(file.name + " (sin reverso)");
-
-    await downloadPDF(resultPDF, file.name.replace(/\.pdf$/i,"") + " - ENMARCADO.pdf");
-
-    processed++;
+    count++;
   }
 
-  let msg = `✔ ¡Proceso terminado! ${processed} archivos generados.`;
-  if(missing.length) msg += `\n⚠ Archivos con advertencias:\n• ` + missing.join("\n• ");
-  alert(msg);
-
-  document.getElementById("status").textContent = "✔ Listo para procesar";
-  document.getElementById("progress").textContent = "";
-  document.getElementById("mergeWithReversoBtn").disabled = false;
+  status.textContent = `✅ ${count} PDFs con reverso procesados correctamente.`;
+  btn.disabled = false;
 });
 </script>
 
-</body>
-</html>
 
 
 
