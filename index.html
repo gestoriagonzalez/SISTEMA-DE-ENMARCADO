@@ -5,18 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>GESTORÍA GONZÁLEZ - ENMARCADO MÚLTIPLE</title>
 
+<!-- PDF-Lib -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
 <style>
-  body { font-family: Arial, sans-serif; background:#f6f8fa; padding:24px; }
-  .card { background:#fff; border-radius:12px; padding:32px; max-width:800px; margin:auto; box-shadow:0 8px 25px rgba(0,0,0,0.12); text-align:center; }
-  h2 { color:#1a237e; margin-bottom:20px; }
-  p, label { color:#222; }
-  input { padding:14px; font-size:16px; border-radius:8px; border:1px solid #ccc; width:100%; box-sizing:border-box; }
-  button { background:#007bff; color:white; border:none; padding:16px 32px; font-size:18px; border-radius:10px; cursor:pointer; margin-top:30px; }
-  button:disabled { background:#999; cursor:not-allowed; }
-  #status { margin-top:25px; font-weight:bold; font-size:19px; min-height:30px; }
-  #progress { margin-top:10px; color:#555; font-size:15px; }
+body { font-family: Arial, sans-serif; background:#f6f8fa; padding:24px; }
+.card { background:#fff; border-radius:12px; padding:32px; max-width:800px; margin:auto;
+        box-shadow:0 8px 25px rgba(0,0,0,0.12); text-align:center; }
+h2 { color:#1a237e; margin-bottom:20px; }
+p { line-height:1.6; color:#333; }
+label { display:block; margin:24px 0 8px; font-weight:bold; font-size:17px; color:#222; }
+input { padding:14px; font-size:16px; border-radius:8px; border:1px solid #ccc;
+        width:100%; box-sizing:border-box; }
+button { background:#007bff; color:white; border:none; padding:16px 32px; font-size:18px;
+         font-weight:bold; border-radius:10px; cursor:pointer; margin-top:30px; }
+button:hover:not(:disabled) { background:#0056b3; }
+button:disabled { background:#999; cursor:not-allowed; }
+#status { margin-top:25px; font-weight:bold; font-size:19px; min-height:30px; }
+#progress { margin-top:10px; color:#555; font-size:15px; }
 </style>
 </head>
 <body>
@@ -24,9 +30,10 @@
 <div class="card">
   <h2>GESTORÍA GONZÁLEZ</h2>
   <h3>Sistema de Enmarcado Automático Múltiple</h3>
+
   <p>Selecciona <strong>todas las actas que quieras enmarcar</strong>.</p>
 
-  <label>Subir actas:</label>
+  <label>Subir actas (el estado se detecta por nombre del archivo):</label>
   <input id="baseFiles" type="file" accept="application/pdf" multiple>
   <button id="processBtn">ENMARCAR Y AGREGAR REVERSO</button>
 
@@ -35,6 +42,7 @@
 </div>
 
 <script>
+// Lista de estados soportados
 const stateNames = [
   "AGUASCALIENTES", "BAJA CALIFORNIA", "BAJA CALIFORNIA SUR", "CAMPECHE",
   "CHIAPAS", "CHIHUAHUA", "COAHUILA", "COLIMA", "CIUDAD DE MEXICO", "CDMX",
@@ -45,40 +53,39 @@ const stateNames = [
   "VERACRUZ", "YUCATAN", "ZACATECAS"
 ];
 
-const basePath = "/pdf/";
+const basePath = "./pdf/";
 
-async function loadPDF(path) {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`No encontrado: ${path}`);
-  return res.arrayBuffer();
-}
-
-function normalize(str) {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-}
-
-async function enmarcarPDF(baseBytes, estado) {
+async function enmarcarPDF(baseBytes, estadoDetected) {
   const { PDFDocument } = PDFLib;
 
-  const marcoBytes = await loadPDF(basePath + "MARCO ACTA.pdf");
-  const reversoBytes = await loadPDF(basePath + estado + ".pdf");
+  const marcoBytes = await fetch(basePath + "MARCO ACTA.pdf").then(r => r.arrayBuffer());
+  const reversoPath = basePath + estadoDetected + ".pdf";
+
+  let reversoBytes = null;
+  try {
+    reversoBytes = await fetch(reversoPath).then(r => r.arrayBuffer());
+  } catch {
+    reversoBytes = null;
+  }
 
   const basePDF = await PDFDocument.load(baseBytes);
   const marcoPDF = await PDFDocument.load(marcoBytes);
-  const reversoPDF = await PDFDocument.load(reversoBytes);
 
-  const result = await PDFDocument.create();
+  const resultPDF = await PDFDocument.create();
 
-  const [marcoPage] = await result.copyPages(marcoPDF, [0]);
-  result.addPage(marcoPage);
+  const [marcoPage] = await resultPDF.copyPages(marcoPDF, [0]);
+  resultPDF.addPage(marcoPage);
 
-  const [docPage] = await result.copyPages(basePDF, [0]);
-  result.addPage(docPage);
+  const [docPage] = await resultPDF.copyPages(basePDF, [0]);
+  resultPDF.addPage(docPage);
 
-  const [revPage] = await result.copyPages(reversoPDF, [0]);
-  result.addPage(revPage);
+  if (reversoBytes) {
+    const reversoPDF = await PDFDocument.load(reversoBytes);
+    const [revPage] = await resultPDF.copyPages(reversoPDF, [0]);
+    resultPDF.addPage(revPage);
+  }
 
-  return result;
+  return resultPDF;
 }
 
 document.getElementById("processBtn").addEventListener("click", async () => {
@@ -87,41 +94,43 @@ document.getElementById("processBtn").addEventListener("click", async () => {
   const progress = document.getElementById("progress");
   const btn = document.getElementById("processBtn");
 
-  if (!input.files.length) return alert("Selecciona al menos un PDF");
+  if (!input.files.length) {
+    alert("Selecciona al menos un archivo PDF");
+    return;
+  }
 
   btn.disabled = true;
+  const files = Array.from(input.files);
   let processed = 0;
-  const files = [...input.files];
 
   for (const file of files) {
-    const name = normalize(file.name);
-    const estado = stateNames.find(st => name.includes(normalize(st)));
+    const nameUpper = file.name.toUpperCase();
+    const estadoDetected = stateNames.find(st => nameUpper.includes(st));
 
-    if (!estado) {
+    if (!estadoDetected) {
       alert(`⚠ No se detectó el estado en: ${file.name}`);
       continue;
     }
 
-    try {
-      status.textContent = `Procesando: ${file.name}`;
-      progress.textContent = `${processed + 1} de ${files.length}`;
+    status.textContent = `Procesando: ${file.name}`;
+    progress.textContent = `${processed + 1} de ${files.length}`;
 
-      const resultPDF = await enmarcarPDF(await file.arrayBuffer(), estado);
-      const blob = new Blob([await resultPDF.save()], { type: "application/pdf" });
+    const baseBytes = await file.arrayBuffer();
+    const resultPDF = await enmarcarPDF(baseBytes, estadoDetected);
 
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `${file.name.replace(/\.pdf$/i, "")} - ENMARCADO.pdf`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+    const newName = file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf";
 
-      processed++;
-    } catch (e) {
-      alert(`❌ Error con ${file.name}\n${e.message}`);
-    }
+    const pdfBytes = await resultPDF.save();
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = newName;
+    a.click();
+
+    processed++;
   }
 
-  status.textContent = `✔ ¡Terminado! ${processed} PDF(s) generados.`;
+  status.textContent = `✔ ¡Proceso terminado! ${processed} PDF(s) generados.`;
   progress.textContent = "";
   btn.disabled = false;
 });
@@ -129,5 +138,7 @@ document.getElementById("processBtn").addEventListener("click", async () => {
 
 </body>
 </html>
+
+
 
 
