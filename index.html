@@ -33,11 +33,34 @@
 </head>
 <body>
 
+<!-- CONTENIDO OCULTO HASTA LOGIN -->
+<div id="app" style="display:none;">
+  <div class="card">
+    <h2>GESTORÍA GONZÁLEZ</h2>
+    <h3>Sistema de Enmarcado Automático Múltiple</h3>
+    <p>Selecciona <strong>todas las actas que quieras enmarcar</strong> (puedes seleccionar 1, 10 o 100 de golpe).</p>
+    <p>El marco y el reverso se aplican automáticamente según el estado detectado.</p>
+
+    <label>Actas a enmarcar (múltiples archivos, sin reverso):</label>
+    <input id="baseFiles" type="file" accept="application/pdf" multiple>
+    <button id="mergeBtn">GENERAR TODOS LOS PDFs ENMARCADOS</button>
+
+    <hr>
+
+    <label>Actas a enmarcar y agregar reverso automáticamente:</label>
+    <input id="baseFilesWithReverso" type="file" accept="application/pdf" multiple>
+    <button id="mergeWithReversoBtn">GENERAR PDF CON REVERSO AUTOMÁTICO</button>
+
+    <div id="status">Listo para procesar</div>
+    <div id="progress"></div>
+  </div>
+</div>
+
 <script>
 // -------- LOGIN SEGURO CON HASH SHA-256 --------
 const usuariosAutorizados = [
   // Ejemplo: usuario y hash SHA-256 de la contraseña
-  { user: "cliente1", passHash: "9c56cc51..." }, // reemplaza con hash real
+  { user: "ADMIN", passHash: "9c56cc51..." }, // reemplaza con hash real
   { user: "cliente2", passHash: "f2d3a1b2..." },
   { user: "cliente3", passHash: "a1b2c3d4..." }
 ];
@@ -57,41 +80,21 @@ async function login(){
   const contraseña = prompt("Contraseña:");
 
   const passHash = await hashString(contraseña);
-
   const autorizado = usuariosAutorizados.some(u => u.user === usuario && u.passHash === passHash);
 
   if(!autorizado){
-    document.body.innerHTML = "<h2>Acceso denegado</h2>";
+    document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;color:red;'>ACCESO DENEGADO</h2>";
     return false;
   }
 
-  alert("Bienvenido " + usuario);
+  // Mostrar contenido solo si usuario autorizado
+  document.getElementById("app").style.display = "block";
   return true;
 }
 
 // Ejecutar login al cargar la página
-login().then(ok => { if(!ok) throw "Acceso no autorizado"; });
+login();
 </script>
-
-<div class="card">
-  <h2>GESTORÍA GONZÁLEZ</h2>
-  <h3>Sistema de Enmarcado Automático Múltiple</h3>
-  <p>Selecciona <strong>todas las actas que quieras enmarcar</strong> (puedes seleccionar 1, 10 o 100 de golpe).</p>
-  <p>El marco y el reverso se aplican automáticamente según el estado detectado.</p>
-
-  <label>Actas a enmarcar (múltiples archivos, sin reverso):</label>
-  <input id="baseFiles" type="file" accept="application/pdf" multiple>
-  <button id="mergeBtn">GENERAR TODOS LOS PDFs ENMARCADOS</button>
-
-  <hr>
-
-  <label>Actas a enmarcar y agregar reverso automáticamente:</label>
-  <input id="baseFilesWithReverso" type="file" accept="application/pdf" multiple>
-  <button id="mergeWithReversoBtn">GENERAR PDF CON REVERSO AUTOMÁTICO</button>
-
-  <div id="status">Listo para procesar</div>
-  <div id="progress"></div>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -214,6 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
+
 
 
 
