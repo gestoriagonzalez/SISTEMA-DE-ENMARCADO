@@ -5,27 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GESTORÍA GONZÁLEZ</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; }
-  #loginModal {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index:9999;
-  }
-  #loginBox {
-    background:#fff; padding:40px 30px; border-radius:12px; width:380px; text-align:center;
-  }
-  #loginBox input { width:90%; padding:12px; margin:8px 0; border:1px solid #ccc; border-radius:8px; font-size:14px;}
-  #loginBox button { width:95%; padding:12px; background:#007BFF; border:none; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; margin-top:10px;}
-  #loginBox button:hover { background:#0056b3; }
-  #errorMsg { color:red; margin-top:10px; }
-  
-  #adminPanel {
-    display:none; border:2px solid #007BFF; padding:20px; margin:20px; border-radius:10px; background:#f1f8ff;
-  }
-  #adminPanel input { display:block; width:90%; margin:5px 0; padding:8px; border:1px solid #ccc; border-radius:6px;}
-  #adminPanel button { padding:10px 15px; margin-top:10px; background:#007BFF; color:#fff; border:none; border-radius:6px; cursor:pointer;}
-  #adminPanel button:hover { background:#0056b3; }
-  #successMsg { color:green; margin-top:8px; }
-  #userList { margin-top:10px; font-size:14px; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; }
+#loginModal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75); display:flex; justify-content:center; align-items:center; z-index:9999; }
+#loginBox { background:#fff; padding:40px 30px; border-radius:12px; width:380px; text-align:center; }
+#loginBox input { width:90%; padding:12px; margin:8px 0; border:1px solid #ccc; border-radius:8px; font-size:14px;}
+#loginBox button { width:95%; padding:12px; background:#007BFF; border:none; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; margin-top:10px;}
+#loginBox button:hover { background:#0056b3; }
+#errorMsg { color:red; margin-top:10px; }
+
+#adminPanel { display:none; border:2px solid #007BFF; padding:20px; margin:20px; border-radius:10px; background:#f1f8ff; }
+#adminPanel input { display:block; width:90%; margin:5px 0; padding:8px; border:1px solid #ccc; border-radius:6px;}
+#adminPanel button { padding:10px 15px; margin-top:10px; background:#007BFF; color:#fff; border:none; border-radius:6px; cursor:pointer;}
+#adminPanel button:hover { background:#0056b3; }
+#successMsg { color:green; margin-top:8px; }
+#userList { margin-top:10px; font-size:14px; }
 </style>
 </head>
 <body>
@@ -219,18 +212,18 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 </html>
 ">
-  <!-- Tu HTML funcional -->
+  <!-- Contenido funcional de tu página -->
   <header>
     <h1>Gestoría González</h1>
   </header>
   <section>
-    <p>Contenido funcional de tu página aquí...</p>
+    <p>Contenido de tu página aquí...</p>
   </section>
   <footer>
     <p>© 2025 Gestoría González</p>
   </footer>
 
-  <!-- Panel de administración -->
+  <!-- Panel de administración solo visible para admin -->
   <div id="adminPanel">
     <h3>CREAR USUARIOS</h3>
     <input type="text" id="newUser" placeholder="Nombre de usuario">
@@ -265,7 +258,6 @@ mainContent.style.display = 'none';
 async function checkLogin() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
-
   try {
     const res = await fetch('/api/login', {
       method:'POST',
@@ -296,10 +288,9 @@ async function addUser() {
   const password = document.getElementById('newPass').value;
   if(!username || !password){
     successMsg.style.color='red';
-    successMsg.innerText = 'Complete ambos campos';
+    successMsg.innerText='Complete ambos campos';
     return;
   }
-
   try {
     const res = await fetch('/api/users', {
       method:'POST',
@@ -315,7 +306,7 @@ async function addUser() {
       loadUsers();
     } else {
       successMsg.style.color='red';
-      successMsg.innerText = data.message;
+      successMsg.innerText=data.message;
     }
   } catch(err){
     console.error(err);
@@ -329,13 +320,13 @@ async function loadUsers() {
   try{
     const res = await fetch('/api/users');
     const users = await res.json();
-    let html = '<strong>Usuarios existentes:</strong><ul>';
+    let html='<strong>Usuarios existentes:</strong><ul>';
     users.forEach(u=>{ html+=`<li>${u.username}</li>`; });
     html+='</ul>';
     userListDiv.innerHTML = html;
   } catch(err){
     console.error(err);
-    userListDiv.innerHTML = '<p>Error cargando usuarios</p>';
+    userListDiv.innerHTML='<p>Error cargando usuarios</p>';
   }
 }
 
@@ -347,6 +338,7 @@ document.getElementById('newPass').addEventListener('keyup', e=>{ if(e.key==='En
 
 </body>
 </html>
+
 
 
 
