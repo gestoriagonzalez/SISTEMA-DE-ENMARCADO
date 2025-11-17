@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GESTORÍA GONZÁLEZ</title>
 <style>
-  /* Estilos del modal de login */
+  /* Modal de login */
   #loginModal {
     position: fixed;
     top:0;
@@ -37,7 +37,7 @@
   #errorMsg { margin-top:12px; color:red; font-size:14px; }
   @keyframes fadeIn { from {opacity:0; transform:translateY(-20px);} to {opacity:1; transform:translateY(0);} }
 
-  /* Panel de administración dentro de la página */
+  /* Panel de administración solo visible para admin */
   #adminPanel {
     display: none; /* oculto por defecto */
     border: 2px solid #007BFF;
@@ -246,19 +246,28 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 </html>
 ">
-  <!-- PEGAR TODO TU HTML REAL AQUÍ -->
+  <!-- AQUI PEGA TODO TU HTML REAL DE LA PÁGINA -->
   <header>
     <h1>Gestoría González</h1>
-    <nav> <!-- menú real --> </nav>
+    <nav>
+      <ul>
+        <li><a href="#">Inicio</a></li>
+        <li><a href="#">Servicios</a></li>
+        <li><a href="#">Contacto</a></li>
+      </ul>
+    </nav>
   </header>
   <section>
-    <p>Todo tu contenido funcional va aquí.</p>
+    <p>Tu contenido funcional aquí: secciones, formularios, tablas, etc.</p>
   </section>
-  <footer> <!-- footer real --> </footer>
+  <footer>
+    <p>© 2025 Gestoría González</p>
+  </footer>
 
-  <!-- Panel de administración (solo visible para admin) -->
+  <!-- Panel de administración (solo para admin) -->
   <div id="adminPanel">
-    <h3>Gestión de Usuarios</h3>
+    <h3>Panel de Administración</h3>
+    <p>Agregar un nuevo usuario:</p>
     <input type="text" id="newUser" placeholder="Nuevo usuario">
     <input type="password" id="newPass" placeholder="Contraseña">
     <button onclick="addUser()">Agregar Usuario</button>
@@ -279,7 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </div>
 
 <script>
-  // Usuarios y contraseñas iniciales
+  // Usuarios iniciales
   let users = {
     "admin": "1234",
     "usuario1": "pass1"
@@ -303,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mainContent.style.display = 'block';
       errorMsg.innerText = '';
 
-      // Si es admin, muestra el panel de gestión de usuarios
+      // Solo admin ve el panel de gestión
       if(username === 'admin') {
         adminPanel.style.display = 'block';
         renderUserList();
@@ -346,12 +355,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Enter para login
   document.getElementById('password').addEventListener('keyup', function(e){
-    if(e.key === 'Enter') checkLogin();
+    if(e.key==='Enter') checkLogin();
   });
 
   // Enter para agregar usuario
   document.getElementById('newPass').addEventListener('keyup', function(e){
-    if(e.key === 'Enter') addUser();
+    if(e.key==='Enter') addUser();
   });
 
 </script>
