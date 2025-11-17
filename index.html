@@ -76,14 +76,21 @@
 </head>
 <body>
 
-<!-- Contenido de tu página original -->
+<!-- Contenedor que ocultará todo el contenido hasta login -->
 <div id="mainContent">
-  <!-- Aquí va TODO tu código original de la página, sin cambios -->
+  <!-- PEGAR AQUÍ TODO TU HTML ORIGINAL DE LA PÁGINA -->
+  
   <h1>Bienvenido a Gestoría González</h1>
   <p>Contenido protegido...</p>
-  
-  <!-- Ejemplo de contenido adicional de tu página -->
   <p>Sección de enmarcado múltiple...</p>
+  
+  <!-- Ejemplo de tu contenido original -->
+  <!-- 
+  <header>...</header>
+  <nav>...</nav>
+  <section>...</section>
+  <footer>...</footer>
+  -->
 </div>
 
 <!-- Modal de login -->
@@ -107,7 +114,7 @@
 
   const modal = document.getElementById('loginModal');
   const mainContent = document.getElementById('mainContent');
-  mainContent.style.display = 'none'; // Oculta el contenido hasta login
+  mainContent.style.display = 'none'; // Oculta todo el contenido hasta login
 
   function checkLogin() {
     const username = document.getElementById('username').value.trim();
@@ -115,7 +122,7 @@
 
     if(users[username] && users[username] === password) {
       modal.style.display = 'none';
-      mainContent.style.display = 'block';
+      mainContent.style.display = 'block'; // Muestra TODO el contenido
     } else {
       document.getElementById('errorMsg').innerText = "Usuario o contraseña incorrectos";
     }
