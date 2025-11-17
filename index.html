@@ -56,7 +56,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  const basePath = "./pdf/";
+  const basePath = "/pdf/"; // ✅ Ruta corregida para Vercel
   const marcoFile = "MARCO_ACTA.pdf";
 
   const estadosValidos = [
@@ -69,8 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
     "TABASCO", "TAMAULIPAS", "TLAXCALA", "VERACRUZ",
     "YUCATAN", "ZACATECAS"
   ];
-
-  // ---------- FUNCIONES ----------
 
   function cleanText(str) {
     return str.replace(/\s+/g,' ').trim();
@@ -111,12 +109,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch(e) {
       console.error("Error mergePDF:", e);
       alert("Error al procesar PDF: " + e.message);
+      return null;
     }
   }
 
   async function mergePDFWithReverso(baseBytes, estado) {
     try {
       const result = await mergePDF(baseBytes);
+      if (!result) throw new Error("No se pudo generar el PDF base.");
       const revBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
       const revPdf = await PDFLib.PDFDocument.load(revBytes);
       const [revPage] = await result.copyPages(revPdf, [0]);
@@ -125,10 +125,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch(e) {
       console.error("Error mergePDFWithReverso:", e);
       alert("Error al agregar reverso: " + e.message);
+      return null;
     }
   }
 
   async function download(pdf, name) {
+    if (!pdf) return;
     const bytes = await pdf.save();
     const url = URL.createObjectURL(new Blob([bytes], { type:"application/pdf" }));
     const a = document.createElement("a");
@@ -140,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- BOTONES ----------
 
-  // Sin reverso
   document.getElementById("mergeBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFiles");
     const status = document.getElementById("status");
@@ -164,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
     status.textContent = `✔ ${count} PDF(s) procesados correctamente.`;
   });
 
-  // Con reverso
   document.getElementById("mergeWithReversoBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFilesWithReverso");
     const status = document.getElementById("status");
@@ -200,15 +200,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
