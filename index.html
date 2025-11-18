@@ -1,33 +1,11 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GESTORÍA GONZÁLEZ - ENMARCADO MÚLTIPLE</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
-  #loginModal { display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-  #loginBox { background:#fff; padding:20px; border-radius:8px; width:300px; box-shadow:0 0 10px rgba(0,0,0,0.3); }
-  input { width:100%; padding:8px; margin:8px 0; }
-  button { padding:8px 12px; margin-top:8px; cursor:pointer; }
-  #panelAdmin { margin:20px 0; padding:10px; border:1px solid #ccc; background:#fff; border-radius:6px; }
-  #mainContent { padding:20px; }
-</style>
-</head>
-<body>
-
-<!-- Modal de Login -->
 <div id="loginModal">
-  <div id="loginBox">
-    <h3>Login</h3>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button onclick="login()">Ingresar</button>
-    <p id="loginError" style="color:red;"></p>
-  </div>
+  <h3>Login</h3>
+  <input type="text" id="username" placeholder="Usuario">
+  <input type="password" id="password" placeholder="Contraseña">
+  <button onclick="login()">Ingresar</button>
+  <p id="loginError" style="color:red;"></p>
 </div>
 
-<!-- Contenido protegido -->
 <div id="<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -218,103 +196,78 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 " style="display:none;">
   <h1>Gestoría González</h1>
-
-  <!-- Panel Admin -->
   <div id="panelAdmin" style="display:none;">
     <h3>Panel Admin - Crear Usuario</h3>
-    <input type="email" id="newEmail" placeholder="Nuevo usuario">
+    <input type="text" id="newUser" placeholder="Nuevo usuario">
     <input type="password" id="newPass" placeholder="Contraseña">
     <button onclick="addUser()">Agregar Usuario</button>
     <p id="userMsg" style="color:green;"></p>
   </div>
 
   <!-- Aquí va tu contenido original -->
-  <!-- Copia todo tu HTML original de la página dentro de este div -->
-  <section>
-    <p>Contenido protegido...</p>
-    <p>Sección de enmarcado múltiple...</p>
-  </section>
+  <p>Contenido protegido...</p>
+  <p>Sección de enmarcado múltiple...</p>
 </div>
 
-<!-- Firebase -->
-<script type="// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+<script>
+let currentRole = '';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBfwAE7cHHLcLhqKZe8ctLqYKDwT9IzOxg",
-  authDomain: "login-actapro.firebaseapp.com",
-  projectId: "login-actapro",
-  storageBucket: "login-actapro.firebasestorage.app",
-  messagingSenderId: "998041106380",
-  appId: "1:998041106380:web:e9487a376a4d802742cf69",
-  measurementId: "G-WDM7JH0YMG"
-};
+async function login() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const error = document.getElementById('loginError');
+  error.textContent = '';
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "XXXX",
-    appId: "XXXX"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  async function login() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const error = document.getElementById('loginError');
-    error.textContent = '';
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  try {
+    const res = await fetch('/api/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if(data.ok){
+      currentRole = data.role;
       document.getElementById('loginModal').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
-      // Solo admin ve el panel
-      if(email === 'admin@gestoria.com') document.getElementById('panelAdmin').style.display='block';
-    } catch(err) {
-      error.textContent = 'Usuario o contraseña incorrectos';
+      if(currentRole==='admin') document.getElementById('panelAdmin').style.display='block';
+    } else {
+      error.textContent = data.message;
     }
+  } catch(err){
+    error.textContent = 'Error de conexión';
   }
+}
 
-  async function addUser() {
-    const email = document.getElementById('newEmail').value;
-    const password = document.getElementById('newPass').value;
-    const msg = document.getElementById('userMsg');
-    msg.style.color='green';
-    msg.textContent='';
+async function addUser() {
+  const username = document.getElementById('newUser').value;
+  const password = document.getElementById('newPass').value;
+  const msg = document.getElementById('userMsg');
+  msg.style.color='green';
+  msg.textContent='';
 
-    if(!email || !password){ msg.style.color='red'; msg.textContent='Completa todos los campos'; return; }
+  if(!username || !password){ msg.style.color='red'; msg.textContent='Completa todos los campos'; return; }
 
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      msg.textContent = 'Usuario agregado correctamente';
-      document.getElementById('newEmail').value='';
+  try {
+    const res = await fetch('/api/users', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password, requester: currentRole })
+    });
+    const data = await res.json();
+    if(res.ok){
+      msg.textContent = data.message;
+      document.getElementById('newUser').value='';
       document.getElementById('newPass').value='';
-    } catch(err) {
+    } else {
       msg.style.color='red';
-      msg.textContent = err.message;
+      msg.textContent = data.message;
     }
+  } catch(err){
+    msg.style.color='red';
+    msg.textContent = 'Error de conexión';
   }
+}
 </script>
-
-</body>
-</html>
-
-
 
 
 
