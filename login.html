@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login - Gestoría González</title>
+<style>
+  body { font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f4f4; }
+  input, button { display:block; margin:10px 0; padding:8px; width:200px; }
+</style>
+</head>
+<body>
+<div>
+  <h2>Login</h2>
+  <input type="text" id="username" placeholder="Usuario">
+  <input type="password" id="password" placeholder="Contraseña">
+  <button onclick="login()">Ingresar</button>
+  <p id="error" style="color:red;"></p>
+</div>
+
+<script>
+async function login(){
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const error = document.getElementById('error');
+  error.textContent='';
+
+  try{
+    const res = await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username,password})
+    });
+    const data = await res.json();
+    if(data.ok){
+      sessionStorage.setItem('role', data.role);
+      sessionStorage.setItem('username', username);
+      window.location.href = '/index.html';
+    } else {
+      error.textContent = data.message;
+    }
+  } catch(err){
+    error.textContent = 'Error de conexión';
+  }
+}
+</script>
+</body>
+</html>
+
