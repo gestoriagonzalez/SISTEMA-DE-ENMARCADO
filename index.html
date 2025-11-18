@@ -29,10 +29,29 @@
   #status { margin-top:25px; font-weight:bold; font-size:19px; min-height:30px; }
   #progress { margin-top:10px; color:#555; font-size:15px; }
   hr { margin:30px 0; }
+  #panelAdmin { display:none; margin:20px auto; padding:15px; border:1px solid #ccc; max-width:400px; background:#eef; }
 </style>
 </head>
 <body>
 
+<script>
+  // 🔒 Protege la página: solo usuarios logueados pueden entrar
+  const role = sessionStorage.getItem('role');
+  if(!role) window.location.href = '/login.html';
+</script>
+
+<h1 style="text-align:center;">Gestoría González</h1>
+
+<!-- Panel Admin para crear usuarios -->
+<div id="panelAdmin">
+  <h3>Panel Admin - Crear Usuario</h3>
+  <input type="text" id="newUser" placeholder="Nuevo usuario">
+  <input type="password" id="newPass" placeholder="Contraseña">
+  <button onclick="addUser()">Agregar Usuario</button>
+  <p id="userMsg" style="color:green;"></p>
+</div>
+
+<!-- CONTENIDO ORIGINAL DE TU PÁGINA -->
 <div class="card">
   <h2>GESTORÍA GONZÁLEZ</h2>
   <h3>Sistema de Enmarcado Automático Múltiple</h3>
@@ -54,9 +73,33 @@
 </div>
 
 <script>
+  // Mostrar panel admin solo si es admin
+  if(role==='admin') document.getElementById('panelAdmin').style.display='block';
+
+  async function addUser(){
+    const username = document.getElementById('newUser').value;
+    const password = document.getElementById('newPass').value;
+    const msg = document.getElementById('userMsg');
+
+    try{
+      const res = await fetch('/api/users',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username, password, requester: role })
+      });
+      const data = await res.json();
+      msg.textContent = data.message;
+      if(res.ok){ document.getElementById('newUser').value=''; document.getElementById('newPass').value=''; }
+    } catch(err){
+      msg.textContent = 'Error de conexión';
+    }
+  }
+</script>
+
+<script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  const basePath = "/public/pdf/"; // ✅ Ruta corregida para Vercel
+  const basePath = "/public/pdf/";
   const marcoFile = "MARCO_ACTA.pdf";
 
   const estadosValidos = [
@@ -70,15 +113,10 @@ document.addEventListener("DOMContentLoaded", () => {
     "YUCATAN", "ZACATECAS"
   ];
 
-  function cleanText(str) {
-    return str.replace(/\s+/g,' ').trim();
-  }
-
+  function cleanText(str) { return str.replace(/\s+/g,' ').trim(); }
   function detectEstado(text) {
     text = cleanText(text.toUpperCase());
-    for (const est of estadosValidos) {
-      if (text.includes(est)) return est;
-    }
+    for (const est of estadosValidos) if (text.includes(est)) return est;
     return null;
   }
 
@@ -126,8 +164,6 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   }
 
-  // ---------- BOTONES ----------
-
   document.getElementById("mergeBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFiles");
     const status = document.getElementById("status");
@@ -163,10 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const text = await extractTextFirstPage(file);
         const estado = detectEstado(text);
-        if (!estado) {
-          alert(`❌ Estado no detectado en: ${file.name}`);
-          continue;
-        }
+        if (!estado) { alert(`❌ Estado no detectado en: ${file.name}`); continue; }
 
         const bytes = await file.arrayBuffer();
         const pdf = await mergePDFWithReverso(bytes, estado);
@@ -186,10 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-
-
-
-
 
 
 
