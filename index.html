@@ -1,12 +1,4 @@
-<div id="loginModal">
-  <h3>Login</h3>
-  <input type="text" id="username" placeholder="Usuario">
-  <input type="password" id="password" placeholder="Contraseña">
-  <button onclick="login()">Ingresar</button>
-  <p id="loginError" style="color:red;"></p>
-</div>
-
-<div id="<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
@@ -194,83 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-" style="display:none;">
-  <h1>Gestoría González</h1>
-  <div id="panelAdmin" style="display:none;">
-    <h3>Panel Admin - Crear Usuario</h3>
-    <input type="text" id="newUser" placeholder="Nuevo usuario">
-    <input type="password" id="newPass" placeholder="Contraseña">
-    <button onclick="addUser()">Agregar Usuario</button>
-    <p id="userMsg" style="color:green;"></p>
-  </div>
-
-  <!-- Aquí va tu contenido original -->
-  <p>Contenido protegido...</p>
-  <p>Sección de enmarcado múltiple...</p>
-</div>
-
-<script>
-let currentRole = '';
-
-async function login() {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const error = document.getElementById('loginError');
-  error.textContent = '';
-
-  try {
-    const res = await fetch('/api/login', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if(data.ok){
-      currentRole = data.role;
-      document.getElementById('loginModal').style.display = 'none';
-      document.getElementById('mainContent').style.display = 'block';
-      if(currentRole==='admin') document.getElementById('panelAdmin').style.display='block';
-    } else {
-      error.textContent = data.message;
-    }
-  } catch(err){
-    error.textContent = 'Error de conexión';
-  }
-}
-
-async function addUser() {
-  const username = document.getElementById('newUser').value;
-  const password = document.getElementById('newPass').value;
-  const msg = document.getElementById('userMsg');
-  msg.style.color='green';
-  msg.textContent='';
-
-  if(!username || !password){ msg.style.color='red'; msg.textContent='Completa todos los campos'; return; }
-
-  try {
-    const res = await fetch('/api/users', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ username, password, requester: currentRole })
-    });
-    const data = await res.json();
-    if(res.ok){
-      msg.textContent = data.message;
-      document.getElementById('newUser').value='';
-      document.getElementById('newPass').value='';
-    } else {
-      msg.style.color='red';
-      msg.textContent = data.message;
-    }
-  } catch(err){
-    msg.style.color='red';
-    msg.textContent = 'Error de conexión';
-  }
-}
-</script>
-
-
-
 
 
 
