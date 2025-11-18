@@ -181,11 +181,22 @@ document.addEventListener("DOMContentLoaded", () => {
     status.textContent = `✔ ${count} PDF(s) con reverso procesados.`;
   });
 
+  // ---------- CONTADOR DE VISITAS ----------
+
+  const statusDiv = document.getElementById("status");
+  fetch('https://api.countapi.xyz/hit/gestoria-gonzalez/enmarcado')
+    .then(res => res.json())
+    .then(data => {
+      statusDiv.textContent += ` | Total visitas: ${data.value}`;
+    })
+    .catch(err => console.error("Error contador de visitas:", err));
+
 });
 </script>
 
 </body>
 </html>
+
 
 
 
