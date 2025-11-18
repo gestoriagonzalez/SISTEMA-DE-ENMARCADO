@@ -18,3 +18,7 @@ export default function handler(req, res) {
     res.status(401).json({ ok:false, message:'Usuario o contraseña incorrectos' });
   }
 }
+const filePath = path.join(process.cwd(),'users.json');
+const users = JSON.parse(fs.readFileSync(filePath,'utf8'));
+console.log('Usuarios leídos:', users);
+console.log('Datos recibidos:', username, password);
