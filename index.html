@@ -39,19 +39,21 @@
   <p>Selecciona <strong>todas las actas que quieras enmarcar</strong> (puedes seleccionar 1, 10 o 100 de golpe).</p>
   <p>El marco y el reverso se aplican automáticamente según el estado detectado.</p>
 
+  <!-- BOTÓN 1 -->
   <label>Actas a enmarcar (múltiples archivos, sin reverso):</label>
   <input id="baseFiles" type="file" accept="application/pdf" multiple>
   <button id="mergeBtn">GENERAR TODOS LOS PDFs ENMARCADOS</button>
 
   <hr>
 
+  <!-- BOTÓN 2 -->
   <label>Actas a enmarcar y agregar reverso automáticamente:</label>
   <input id="baseFilesWithReverso" type="file" accept="application/pdf" multiple>
   <button id="mergeWithReversoBtn">GENERAR PDF CON REVERSO AUTOMÁTICO</button>
 
   <hr>
 
-  <!-- 🔥 NUEVA FUNCIÓN VISUAL: SOLO AGREGAR REVERSO -->
+  <!-- BOTÓN 3 NUEVO -->
   <label>Agregar SOLO el reverso (para actas que ya tienen marco):</label>
   <input id="filesOnlyReverso" type="file" accept="application/pdf" multiple>
   <button id="onlyReversoBtn">AGREGAR SOLO REVERSO</button>
@@ -120,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return result;
   }
 
-  /* 🔥 NUEVA FUNCIÓN: SOLO AGREGAR REVERSO A PDF YA ENMARCADO */
+  /* NUEVA FUNCIÓN SOLO REVERSO */
   async function appendOnlyReverso(baseBytes, estado) {
     const { PDFDocument } = PDFLib;
     const basePdf = await PDFDocument.load(baseBytes);
@@ -143,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   }
 
-  // -------------------- BOTÓN 1 --------------------
+  // BOTÓN 1
   document.getElementById("mergeBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFiles");
     const status = document.getElementById("status");
@@ -158,15 +160,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const pdf = await mergePDF(bytes);
         await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf");
         count++;
-      } catch(err) {
-        alert("Error al procesar " + file.name);
-      }
+      } catch(err) {}
     }
 
     status.textContent = `✔ ${count} PDF(s) procesados correctamente.`;
   });
 
-  // -------------------- BOTÓN 2 --------------------
+  // BOTÓN 2
   document.getElementById("mergeWithReversoBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFilesWithReverso");
     const status = document.getElementById("status");
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     status.textContent = `✔ ${count} PDF(s) con reverso procesados.`;
   });
 
-  // -------------------- 🔥 NUEVO BOTÓN 3 --------------------
+  // BOTÓN 3 NUEVO
   document.getElementById("onlyReversoBtn").addEventListener("click", async () => {
     const input = document.getElementById("filesOnlyReverso");
     const status = document.getElementById("status");
@@ -221,7 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
         count++;
 
       } catch (err) {
-        console.error(err);
         alert("Error en " + file.name);
       }
     }
@@ -234,6 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
 
 
 
