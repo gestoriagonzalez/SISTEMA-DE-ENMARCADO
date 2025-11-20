@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const bytes = await file.arrayBuffer();
         const pdf = await mergePDF(bytes);
-        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf");
+        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ACTA.pdf");
         count++;
       } catch(err) {}
     }
