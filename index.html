@@ -39,24 +39,15 @@
   <p>Selecciona <strong>todas las actas que quieras enmarcar</strong> (puedes seleccionar 1, 10 o 100 de golpe).</p>
   <p>El marco y el reverso se aplican automáticamente según el estado detectado.</p>
 
-  <!-- BOTÓN 1 -->
   <label>Actas a enmarcar (múltiples archivos, sin reverso):</label>
   <input id="baseFiles" type="file" accept="application/pdf" multiple>
   <button id="mergeBtn">GENERAR TODOS LOS PDFs ENMARCADOS</button>
 
   <hr>
 
-  <!-- BOTÓN 2 -->
   <label>Actas a enmarcar y agregar reverso automáticamente:</label>
   <input id="baseFilesWithReverso" type="file" accept="application/pdf" multiple>
   <button id="mergeWithReversoBtn">GENERAR PDF CON REVERSO AUTOMÁTICO</button>
-
-  <hr>
-
-  <!-- BOTÓN 3 NUEVO -->
-  <label>Agregar SOLO el reverso (para actas que ya tienen marco):</label>
-  <input id="filesOnlyReverso" type="file" accept="application/pdf" multiple>
-  <button id="onlyReversoBtn">AGREGAR SOLO REVERSO</button>
 
   <div id="status">Listo para procesar</div>
   <div id="progress"></div>
@@ -65,15 +56,18 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  const basePath = "/public/pdf/";
+  const basePath = "/public/pdf/"; // ✅ Ruta corregida para Vercel
   const marcoFile = "MARCO_ACTA.pdf";
 
   const estadosValidos = [
-    "AGUASCALIENTES","BAJA CALIFORNIA","BAJA CALIFORNIA SUR","CAMPECHE","CHIAPAS",
-    "CHIHUAHUA","CIUDAD DE MEXICO","COAHUILA","COLIMA","DURANGO","GUANAJUATO","GUERRERO",
-    "HIDALGO","JALISCO","MEXICO","MICHOACAN","MORELOS","NAYARIT","NUEVO LEON","OAXACA",
-    "PUEBLA","QUERETARO","QUINTANA ROO","SAN LUIS POTOSI","SINALOA","SONORA","TABASCO",
-    "TAMAULIPAS","TLAXCALA","VERACRUZ","YUCATAN","ZACATECAS"
+    "AGUASCALIENTES", "BAJA CALIFORNIA", "BAJA CALIFORNIA SUR",
+    "CAMPECHE", "CHIAPAS", "CHIHUAHUA", "CIUDAD DE MEXICO",
+    "COAHUILA", "COLIMA", "DURANGO", "GUANAJUATO", "GUERRERO",
+    "HIDALGO", "JALISCO", "MEXICO", "MICHOACAN", "MORELOS",
+    "NAYARIT", "NUEVO LEON", "OAXACA", "PUEBLA", "QUERETARO",
+    "QUINTANA ROO", "SAN LUIS POTOSI", "SINALOA", "SONORA",
+    "TABASCO", "TAMAULIPAS", "TLAXCALA", "VERACRUZ",
+    "YUCATAN", "ZACATECAS"
   ];
 
   function cleanText(str) {
@@ -122,19 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return result;
   }
 
-  /* NUEVA FUNCIÓN SOLO REVERSO */
-  async function appendOnlyReverso(baseBytes, estado) {
-    const { PDFDocument } = PDFLib;
-    const basePdf = await PDFDocument.load(baseBytes);
-    const revBytes = await fetch(basePath + estado + ".pdf").then(r => r.arrayBuffer());
-    const revPdf = await PDFDocument.load(revBytes);
-
-    const [revPage] = await basePdf.copyPages(revPdf, [0]);
-    basePdf.addPage(revPage);
-
-    return basePdf;
-  }
-
   async function download(pdf, name) {
     const bytes = await pdf.save();
     const url = URL.createObjectURL(new Blob([bytes], { type:"application/pdf" }));
@@ -145,7 +126,8 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   }
 
-  // BOTÓN 1
+  // ---------- BOTONES ----------
+
   document.getElementById("mergeBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFiles");
     const status = document.getElementById("status");
@@ -158,15 +140,17 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const bytes = await file.arrayBuffer();
         const pdf = await mergePDF(bytes);
-        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - ENMARCADO.pdf");
+        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - 1.pdf");
         count++;
-      } catch(err) {}
+      } catch(err) {
+        console.error(err);
+        alert("Error al procesar " + file.name + ": " + err.message);
+      }
     }
 
     status.textContent = `✔ ${count} PDF(s) procesados correctamente.`;
   });
 
-  // BOTÓN 2
   document.getElementById("mergeWithReversoBtn").addEventListener("click", async () => {
     const input = document.getElementById("baseFilesWithReverso");
     const status = document.getElementById("status");
@@ -180,52 +164,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const text = await extractTextFirstPage(file);
         const estado = detectEstado(text);
         if (!estado) {
-          alert("Estado no detectado en " + file.name);
+          alert(`❌ Estado no detectado en: ${file.name}`);
           continue;
         }
 
         const bytes = await file.arrayBuffer();
         const pdf = await mergePDFWithReverso(bytes, estado);
-        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - CON REVERSO.pdf");
+        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - 2 HOJAS.pdf");
         count++;
-      } catch(err) {}
-    }
-
-    status.textContent = `✔ ${count} PDF(s) con reverso procesados.`;
-  });
-
-  // BOTÓN 3 NUEVO
-  document.getElementById("onlyReversoBtn").addEventListener("click", async () => {
-    const input = document.getElementById("filesOnlyReverso");
-    const status = document.getElementById("status");
-
-    if (!input.files.length) return alert("Selecciona al menos un PDF.");
-
-    status.textContent = "Agregando solo reverso...";
-    let count = 0;
-
-    for (const file of input.files) {
-      try {
-        const text = await extractTextFirstPage(file);
-        const estado = detectEstado(text);
-
-        if (!estado) {
-          alert("Estado no detectado en: " + file.name);
-          continue;
-        }
-
-        const bytes = await file.arrayBuffer();
-        const pdf = await appendOnlyReverso(bytes, estado);
-
-        await download(pdf, file.name.replace(/\.pdf$/i, "") + " - SOLO REVERSO.pdf");
-        count++;
-
-      } catch (err) {
-        alert("Error en " + file.name);
+      } catch(err) {
+        console.error(err);
+        alert("Error en " + file.name + ": " + err.message);
       }
     }
 
-    status.textContent = `✔ ${count} PDF(s) recibieron reverso correctamente.`;
+    status.textContent = `✔ ${count} PDF(s) con reverso procesados.`;
   });
 
 });
